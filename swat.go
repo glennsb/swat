@@ -66,7 +66,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "swat"
 	app.Usage = "Swift Auth Token Getter/Saver"
-	app.Version = "0.1.0 - 20160315"
+	app.Version = "0.2.0 - 20160601"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
 	app.Copyright = "2016 Stuart Glenn, All rights reserved"
@@ -81,11 +81,6 @@ func main() {
 		cli.BoolFlag{
 			Name:  "V, verbose",
 			Usage: "show more output",
-		},
-		cli.StringFlag{
-			Name:  "username, u",
-			Usage: "swift username for authentication, default to current user",
-			Value: default_username,
 		},
 		cli.StringFlag{
 			Name:   "auth-url, a",
@@ -109,6 +104,11 @@ func main() {
 					Name:  "tenant, t",
 					Usage: fmt.Sprintf("swift account/tenant to access, defaults to username with prefix %s", TENANT_PREFIX),
 				},
+				cli.StringFlag{
+					Name:  "username, u",
+					Usage: "swift username for authentication, default to current user",
+					Value: default_username,
+				},
 			},
 			Action: generateToken,
 		},
@@ -118,6 +118,13 @@ func main() {
 			ArgsUsage:   "",
 			Description: "Login to get list of knonwn allowed tenants for user in swift",
 			Action:      listTenants,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "username, u",
+					Usage: "swift username for authentication, default to current user",
+					Value: default_username,
+				},
+			},
 		},
 	}
 	app.RunAndExitOnError()
@@ -130,7 +137,7 @@ func login(c *cli.Context) (*AuthResponse, error) {
 		cli.ShowSubcommandHelp(c)
 		os.Exit(1)
 	}
-	username := c.GlobalString("username")
+	username := c.String("username")
 	account := c.String("tenant")
 	if "" == account {
 		account = fmt.Sprintf("%s%s", TENANT_PREFIX, username)
