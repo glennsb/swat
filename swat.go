@@ -137,8 +137,13 @@ func login(c *cli.Context) (*AuthResponse, error) {
 		cli.ShowSubcommandHelp(c)
 		os.Exit(1)
 	}
-	username := c.String("username")
 	account := c.String("tenant")
+	a, err := postLogin(auth_url, account, "", "")
+	if nil == err {
+		return a, err
+	}
+
+	username := c.String("username")
 	if "" == account {
 		account = fmt.Sprintf("%s%s", TENANT_PREFIX, username)
 	}
@@ -158,10 +163,20 @@ func generateToken(c *cli.Context) {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
+
+	account := c.String("tenant")
+	publicUrl := a.Access.ServiceCatalog[0].Endpoints[0].PublicUrl
+	for _, e := range a.Access.ServiceCatalog[0].Endpoints {
+		if e.TenantId == account {
+			publicUrl = e.PublicUrl
+			break
+		}
+	}
+
 	env := []string{
 		"unset OS_AUTH_TOKEN OS_STORAGE_URL",
 		fmt.Sprintf("export OS_AUTH_TOKEN='%s'", a.Access.Token.Id),
-		fmt.Sprintf("export OS_STORAGE_URL='%s'", a.Access.ServiceCatalog[0].Endpoints[0].PublicUrl),
+		fmt.Sprintf("export OS_STORAGE_URL='%s'", publicUrl),
 	}
 	fmt.Println(strings.Join(env, ";"))
 	if c.BoolT("persist") {
@@ -189,7 +204,12 @@ func listTenants(c *cli.Context) {
 }
 
 func postLogin(url, tenant, username, password string) (*AuthResponse, error) {
-	j := []byte(fmt.Sprintf(`{"auth": {"tenantName": "%s","passwordCredentials": {"username": "%s","password": "%s"}}}`, tenant, username, password))
+	var j []byte
+	if "" == username && "" == password {
+		j = []byte(fmt.Sprintf(`{"auth": {"tenantName": "%s","token": {"id": "%s"}}}`, tenant, os.Getenv("OS_AUTH_TOKEN")))
+	} else {
+		j = []byte(fmt.Sprintf(`{"auth": {"tenantName": "%s","passwordCredentials": {"username": "%s","password": "%s"}}}`, tenant, username, password))
+	}
 	body := bytes.NewBuffer(j)
 
 	client := &http.Client{
