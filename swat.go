@@ -66,7 +66,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "swat"
 	app.Usage = "Swift Auth Token Getter/Saver"
-	app.Version = "0.2.1 - 20170430"
+	app.Version = "0.3.0 - 20170430"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
 	app.Copyright = "2017 Stuart Glenn, All rights reserved"
@@ -109,6 +109,10 @@ func main() {
 					Usage: "swift username for authentication, default to current user",
 					Value: default_username,
 				},
+				cli.BoolFlag{
+					Name:  "password-prompt, P",
+					Usage: "Prompt for password, ignoring existing OS_AUTH_TOKEN",
+				},
 			},
 			Action: generateToken,
 		},
@@ -124,6 +128,10 @@ func main() {
 					Usage: "swift username for authentication, default to current user",
 					Value: default_username,
 				},
+				cli.BoolFlag{
+					Name:  "password-prompt, P",
+					Usage: "Prompt for password, ignoring existing OS_AUTH_TOKEN",
+				},
 			},
 		},
 	}
@@ -138,9 +146,11 @@ func login(c *cli.Context) (*AuthResponse, error) {
 		os.Exit(1)
 	}
 	account := c.String("tenant")
-	a, err := postLogin(auth_url, account, "", "")
-	if nil == err {
-		return a, err
+	if !c.Bool("password-prompt") {
+		a, err := postLogin(auth_url, account, "", "")
+		if nil == err {
+			return a, err
+		}
 	}
 
 	username := c.String("username")
