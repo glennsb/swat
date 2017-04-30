@@ -66,10 +66,10 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "swat"
 	app.Usage = "Swift Auth Token Getter/Saver"
-	app.Version = "0.2.0 - 20160601"
+	app.Version = "0.2.1 - 20170430"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
-	app.Copyright = "2016 Stuart Glenn, All rights reserved"
+	app.Copyright = "2017 Stuart Glenn, All rights reserved"
 
 	current_user, err := user.Current()
 	default_username := ""
