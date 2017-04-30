@@ -182,7 +182,7 @@ func listTenants(c *cli.Context) {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
-	r, _ := regexp.Compile(`\A(` + TENANT_PREFIX + `ss[-_]prj[-_].*)([-_]readers)\z`)
+	r, _ := regexp.Compile(`\A(` + TENANT_PREFIX + `ss[-_](?:prj[-_])?.*)([-_]readers)\z`)
 	for _, e := range a.Access.ServiceCatalog[0].Endpoints {
 		fmt.Println(r.ReplaceAllString(e.TenantId, "$1"))
 	}
