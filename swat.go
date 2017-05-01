@@ -66,7 +66,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "swat"
 	app.Usage = "Swift Auth Token Getter/Saver"
-	app.Version = "0.3.0 - 20170430"
+	app.Version = "0.3.1 - 20170501"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
 	app.Copyright = "2017 Stuart Glenn, All rights reserved"
@@ -175,12 +175,25 @@ func generateToken(c *cli.Context) {
 	}
 
 	account := c.String("tenant")
-	publicUrl := a.Access.ServiceCatalog[0].Endpoints[0].PublicUrl
-	for _, e := range a.Access.ServiceCatalog[0].Endpoints {
-		if e.TenantId == account {
-			publicUrl = e.PublicUrl
+	var publicUrl string
+	for _, suffix := range []string{"", "-readers", "_readers"} {
+		for _, e := range a.Access.ServiceCatalog[0].Endpoints {
+			if e.TenantId == account {
+				publicUrl = e.PublicUrl
+				break
+			} else if e.TenantId == account+suffix {
+				r, _ := regexp.Compile(`/(` + e.TenantId + `)\z`)
+				publicUrl = r.ReplaceAllString(e.PublicUrl, "/"+account)
+				break
+			}
+		}
+		if "" != publicUrl {
 			break
 		}
+	}
+	if "" == publicUrl {
+		fmt.Fprintf(os.Stderr, "Unable to find tenant: %s\n", account)
+		os.Exit(1)
 	}
 
 	env := []string{
