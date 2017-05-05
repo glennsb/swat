@@ -167,6 +167,26 @@ func login(c *cli.Context) (*AuthResponse, error) {
 	return postLogin(auth_url, account, username, string(password))
 }
 
+func publicUrlFromLogin(a *AuthResponse, account string) string {
+	if "" == account {
+		return a.Access.ServiceCatalog[0].Endpoints[0].PublicUrl
+	}
+
+	for _, suffix := range []string{"", "-readers", "_readers"} {
+		for _, e := range a.Access.ServiceCatalog[0].Endpoints {
+			if e.TenantId == account {
+				return e.PublicUrl
+			} else if e.TenantId == account+suffix {
+				r, _ := regexp.Compile(`/(` + e.TenantId + `)\z`)
+				return r.ReplaceAllString(e.PublicUrl, "/"+account)
+			}
+		}
+	}
+	fmt.Fprintf(os.Stderr, "Unable to find tenant: %s\n", account)
+	os.Exit(1)
+	return ""
+}
+
 func generateToken(c *cli.Context) {
 	a, err := login(c)
 	if err != nil {
@@ -174,32 +194,10 @@ func generateToken(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	account := c.String("tenant")
-	var publicUrl string
-	for _, suffix := range []string{"", "-readers", "_readers"} {
-		for _, e := range a.Access.ServiceCatalog[0].Endpoints {
-			if e.TenantId == account {
-				publicUrl = e.PublicUrl
-				break
-			} else if e.TenantId == account+suffix {
-				r, _ := regexp.Compile(`/(` + e.TenantId + `)\z`)
-				publicUrl = r.ReplaceAllString(e.PublicUrl, "/"+account)
-				break
-			}
-		}
-		if "" != publicUrl {
-			break
-		}
-	}
-	if "" == publicUrl {
-		fmt.Fprintf(os.Stderr, "Unable to find tenant: %s\n", account)
-		os.Exit(1)
-	}
-
 	env := []string{
 		"unset OS_AUTH_TOKEN OS_STORAGE_URL",
 		fmt.Sprintf("export OS_AUTH_TOKEN='%s'", a.Access.Token.Id),
-		fmt.Sprintf("export OS_STORAGE_URL='%s'", publicUrl),
+		fmt.Sprintf("export OS_STORAGE_URL='%s'", publicUrlFromLogin(a, c.String("tenant"))),
 	}
 	fmt.Println(strings.Join(env, ";"))
 	if c.BoolT("persist") {
