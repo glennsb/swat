@@ -66,7 +66,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "swat"
 	app.Usage = "Swift Auth Token Getter/Saver"
-	app.Version = "0.3.1 - 20170501"
+	app.Version = "0.3.2 - 20170505"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
 	app.Copyright = "2017 Stuart Glenn, All rights reserved"
